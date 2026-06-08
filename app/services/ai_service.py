@@ -35,40 +35,60 @@ Rules:
 
     elif mode == "blog":
         return f"""
-Write a detailed blog post about: {prompt}
-"""
+    You are a professional blog writer.
+
+    Generate EXACTLY {count} blog articles about: {prompt}
+
+    Rules:
+    - Include an engaging title
+    - Write a short introduction
+    - Use clear headings and subheadings
+    - Explain the topic in simple language
+    - Include a conclusion
+    - Keep the blog informative and well-structured
+    - Return only the blog content
+    """
 
     elif mode == "email":
         return f"""
-Write a professional email about: {prompt}
-"""
+        You are a professional email writer.
 
-    elif mode == "linkedin":
+    Generate EXACTLY {count} professional emails based on: {prompt}
+
+    Rules:
+    - Include a subject line
+    - Include greeting
+    - Include email body
+    - Include professional closing
+    - Use realistic content
+    - Avoid placeholders such as [Your Name], [Manager Name], [Date]
+    - If information is missing, use generic values naturally
+    - Return only the email content
+    - End the email with "Best Regards" only
+    """
+
+    elif mode in ["linkedin", "linkedin_post"]:
         return f"""
-Write a professional LinkedIn post about: {prompt}
-"""
+    You are a professional LinkedIn post generator.
+
+    Generate EXACTLY {count} LinkedIn posts about: {prompt}
+
+    Rules:
+    - Return only LinkedIn posts
+    - No explanation
+    - No headings
+    - No blog/article format
+    - Each post must start with a strong hook
+    - Use simple and professional language
+    - Maximum 120 words per post
+    - Add 3 to 5 relevant hashtags at the end of each post
+    - Separate each post using exactly this separator: ###POST###
+    - Do not use numbering
+    - Do not use bullet points
+    """
 
     return prompt
 
-# def generate_content(prompt: str, count: int = 1):
-#     final_prompt = f"""
-#     You are an AI content assistant.
-
-#     Generate {count} Instagram captions.
-
-#     Topic:
-#     {prompt}
-
-#     Rules:
-#     - Each caption in new line
-#     - No numbering
-#     - No explanation
-#     """
-#     response = model.generate_content(final_prompt)
-#     text = response.text.strip()
-
-#     captions = [line.strip("- ").strip() for line in text.split("\n") if line.strip()]
-#     return captions[:count]
 
 def generate_content(prompt: str, mode: str, count: int = 1):
     try:
@@ -88,22 +108,41 @@ def generate_content(prompt: str, mode: str, count: int = 1):
         text = response.text.strip()
 
         if mode == "caption":
-
             lines = text.split("\n")
 
             captions = []
             for line in lines:
                 line = line.strip("- ").strip()
 
-                if (
-                    line
-                    and "caption" not in line.lower()
-                    and "tip" not in line.lower()
-                    and "pro" not in line.lower()
-                    and len(line) < 120
-                ):
+                if line:
                     captions.append(line)
+
             result = captions[:count]
+
+        elif mode in ["linkedin"]:
+            posts = [
+                post.strip()
+                for post in text.split("###POST###")
+                if post.strip()
+            ]
+            result = posts[:count]
+
+        elif mode == "email":
+            emails = [
+                email.strip()
+                for email in text.split("###EMAIL###")
+                if email.strip()
+            ]
+            result = emails[:count]
+
+        elif mode == "blog":
+            blogs = [
+                blog.strip()
+                for blog in text.split("###BLOG###")
+                if blog.strip()
+            ]
+            result = blogs[:count]
+
         else:
             result = text
         redis_client.set(key, json.dumps(result), ex=3600)
